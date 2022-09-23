@@ -158,7 +158,12 @@ analysis:
 	$(MAKE) fresh
 	$(MKDIR) target/debug/analysis/
 	$(MAKE) valgrind
-	@$(ECHO) ">>$(ident) Analise feita!" $(SAY) 
+	@$(ECHO) ">>$(ident) Analise feita!" $(SAY)
+
+quicktest:
+	$(MAKE) fresh $(MUTE)
+	$(CLEAR)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./target/debug/bin/$(EXE) $(SAY)
 
 hello:
 	@$(ECHO) 'Hello World!'
