@@ -125,6 +125,7 @@ namespace lava {
     vertShaderModule = VK_NULL_HANDLE;
   }
 
+
   void LavaPipeline::createShaderModule(const std::vector<char>& code, VkShaderModule* shaderModule) {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -135,6 +136,13 @@ namespace lava {
       throw std::runtime_error("failed to create shader module");
     }
   }
+
+
+  void LavaPipeline::bind (VkCommandBuffer commandBuffer) {
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+  }
+
+
 
   PipelineConfigInfo LavaPipeline::defaultPipelineConfigInfo(uint32_t width, uint32_t height) {
     PipelineConfigInfo configInfo{};
