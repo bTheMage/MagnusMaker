@@ -9,20 +9,14 @@ release =
 
 
 # CONSTANTES RELEVANTES
-CC := g++
-SC := glslc
-JC := javac
+CC := gcc
 EXE := main
 SRC := src
 SHADERS := shaders
 
-### Vulkan flags
-VK_CFLAGS := -std=c++17 -I. -I$(VULKAN_SDK_PATH)/include
-VK_LDFLAGS := -L$(VULKAN_SDK_PATH)/lib `pkg-config --static --libs glfw3` -lvulkan
 
 CFLAGS := -MD -MP -MMD
 LDFLAGS := 
-
 
 
 # DEFININDO FUNÇÕES DO SHELL
@@ -61,11 +55,10 @@ uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
 
 
 # ARQUIVOS
-CFILES := $(wildcard $(SRC)/*.hpp) $(wildcard $(SRC)/*/*.hpp) $(wildcard $(SRC)/*/*/*.hpp) $(wildcard $(SRC)/*/*/*/*.hpp) $(wildcard $(SRC)/*/*/*/*/*.hpp) $(wildcard $(SRC)/*/*/*/*/*/*.hpp) $(wildcard $(SRC)/*.h) $(wildcard $(SRC)/*/*.h) $(wildcard $(SRC)/*/*/*.h) $(wildcard $(SRC)/*/*/*/*.h) $(wildcard $(SRC)/*/*/*/*/*.h) $(wildcard $(SRC)/*/*/*/*/*/*.h)
-OFILES := $(subst $(SRC),$(DOMAIN)/obj,$(subst .hpp,.o,$(CFILES)))
+CFILES := $(wildcard $(SRC)/*.c) $(wildcard $(SRC)/*/*.c) $(wildcard $(SRC)/*/*/*.c) $(wildcard $(SRC)/*/*/*/*.c) $(wildcard $(SRC)/*/*/*/*/*.c) $(wildcard $(SRC)/*/*/*/*/*/*.c)
+OFILES := $(subst $(SRC),$(DOMAIN)/obj,$(subst .c,.o,$(CFILES)))
 
-HFILES := $(wildcard $(SRC)/*.hpp) $(wildcard $(SRC)/*/*.hpp) $(wildcard $(SRC)/*/*/*.hpp) $(wildcard $(SRC)/*/*/*/*.hpp) $(wildcard $(SRC)/*/*/*/*/*.hpp) $(wildcard $(SRC)/*/*/*/*/*/*.hpp) $(wildcard $(SRC)/*.h) $(wildcard $(SRC)/*/*.h) $(wildcard $(SRC)/*/*/*.h) $(wildcard $(SRC)/*/*/*/*.h) $(wildcard $(SRC)/*/*/*/*/*.h) $(wildcard $(SRC)/*/*/*/*/*/*.h)
-
+HFILES := $(wildcard $(SRC)/*.h) $(wildcard $(SRC)/*/*.h) $(wildcard $(SRC)/*/*/*.h) $(wildcard $(SRC)/*/*/*/*.h) $(wildcard $(SRC)/*/*/*/*/*.h) $(wildcard $(SRC)/*/*/*/*/*/*.h)
 
 VERT_SHADERS := $(wildcard $(SHADERS)/*.vert) $(wildcard $(SHADERS)/*/*.vert) $(wildcard $(SHADERS)/*/*/*.vert) 
 FRAG_SHADERS := $(wildcard $(SHADERS)/*.frag) $(wildcard $(SHADERS)/*/*.frag) $(wildcard $(SHADERS)/*/*/*.frag) 
@@ -95,7 +88,6 @@ NEEDED_DIRS := $(BINDIRS) $(OBJDIRS) $(SPVDIRS)
 ## Compila tudo se necessário.
 all: 
 	@$(MAKE) build ident='>>$(ident)' $(MUTE)
-	@$(MAKE) shaders ident=">>$(ident)" $(MUTE)
 	@$(ECHO) ">>$(ident) Deu tudo certo :)" $(SAY)
 
 ## Compila tudo se necessário, menos os shaders.
@@ -190,8 +182,8 @@ $(PROGRAM): $(OFILES)
 	$(CC) $(CFLAGS) $(OPT) -o "$@" $(foreach file,$(OFILES),"$(file)") $(LDFLAGS)
 
 ## COMPILANDO CADA CPP
-$(OFILES): $(subst $(DOMAIN)/obj,$(SRC),$(subst .o,.hpp,$@))
-	$(CC) $(CFLAGS) $(OPT) -c -o "$@" "$(subst $(DOMAIN)/obj,$(SRC),$(subst .o,.hpp,$@))" $(LDFLAGS)
+$(OFILES): $(subst $(DOMAIN)/obj,$(SRC),$(subst .o,.c,$@))
+	$(CC) $(CFLAGS) $(OPT) -c -o "$@" "$(subst $(DOMAIN)/obj,$(SRC),$(subst .o,.c,$@))" $(LDFLAGS)
 
 compile_shaders: $(SPVDIRS) $(SPVFILES)
 
