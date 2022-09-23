@@ -1,6 +1,7 @@
 # INCLUSÕES RELEVANTES INICIAIS
+ifneq ($(wildcard .env),)
 include .env
-
+endif
 
 
 # PARÂMETROS BOOLEANOS
@@ -15,6 +16,7 @@ EXE := main
 SRC := src
 SHADERS := shaders
 
+### Vulkan flags
 VK_CFLAGS := -std=c++17 -I. -I$(VULKAN_SDK_PATH)/include
 VK_LDFLAGS := -L$(VULKAN_SDK_PATH)/lib `pkg-config --static --libs glfw3` -lvulkan
 
@@ -59,8 +61,11 @@ uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
 
 
 # ARQUIVOS
-CFILES := $(wildcard $(SRC)/*.cpp) $(wildcard $(SRC)/*/*.cpp) $(wildcard $(SRC)/*/*/*.cpp) $(wildcard $(SRC)/*/*/*/*.cpp) $(wildcard $(SRC)/*/*/*/*/*.cpp) $(wildcard $(SRC)/*/*/*/*/*/*.cpp) $(wildcard $(SRC)/*.c) $(wildcard $(SRC)/*/*.c) $(wildcard $(SRC)/*/*/*.c) $(wildcard $(SRC)/*/*/*/*.c) $(wildcard $(SRC)/*/*/*/*/*.c) $(wildcard $(SRC)/*/*/*/*/*/*.c)
-OFILES := $(subst $(SRC),$(DOMAIN)/obj,$(subst .cpp,.o,$(CFILES)))
+CFILES := $(wildcard $(SRC)/*.hpp) $(wildcard $(SRC)/*/*.hpp) $(wildcard $(SRC)/*/*/*.hpp) $(wildcard $(SRC)/*/*/*/*.hpp) $(wildcard $(SRC)/*/*/*/*/*.hpp) $(wildcard $(SRC)/*/*/*/*/*/*.hpp) $(wildcard $(SRC)/*.h) $(wildcard $(SRC)/*/*.h) $(wildcard $(SRC)/*/*/*.h) $(wildcard $(SRC)/*/*/*/*.h) $(wildcard $(SRC)/*/*/*/*/*.h) $(wildcard $(SRC)/*/*/*/*/*/*.h)
+OFILES := $(subst $(SRC),$(DOMAIN)/obj,$(subst .hpp,.o,$(CFILES)))
+
+HFILES := $(wildcard $(SRC)/*.hpp) $(wildcard $(SRC)/*/*.hpp) $(wildcard $(SRC)/*/*/*.hpp) $(wildcard $(SRC)/*/*/*/*.hpp) $(wildcard $(SRC)/*/*/*/*/*.hpp) $(wildcard $(SRC)/*/*/*/*/*/*.hpp) $(wildcard $(SRC)/*.h) $(wildcard $(SRC)/*/*.h) $(wildcard $(SRC)/*/*/*.h) $(wildcard $(SRC)/*/*/*/*.h) $(wildcard $(SRC)/*/*/*/*/*.h) $(wildcard $(SRC)/*/*/*/*/*/*.h)
+
 
 VERT_SHADERS := $(wildcard $(SHADERS)/*.vert) $(wildcard $(SHADERS)/*/*.vert) $(wildcard $(SHADERS)/*/*/*.vert) 
 FRAG_SHADERS := $(wildcard $(SHADERS)/*.frag) $(wildcard $(SHADERS)/*/*.frag) $(wildcard $(SHADERS)/*/*/*.frag) 
@@ -185,8 +190,8 @@ $(PROGRAM): $(OFILES)
 	$(CC) $(CFLAGS) $(OPT) -o "$@" $(foreach file,$(OFILES),"$(file)") $(LDFLAGS)
 
 ## COMPILANDO CADA CPP
-$(OFILES): $(subst $(DOMAIN)/obj,$(SRC),$(subst .o,.cpp,$@))
-	$(CC) $(CFLAGS) $(OPT) -c -o "$@" "$(subst $(DOMAIN)/obj,$(SRC),$(subst .o,.cpp,$@))" $(LDFLAGS)
+$(OFILES): $(subst $(DOMAIN)/obj,$(SRC),$(subst .o,.hpp,$@))
+	$(CC) $(CFLAGS) $(OPT) -c -o "$@" "$(subst $(DOMAIN)/obj,$(SRC),$(subst .o,.hpp,$@))" $(LDFLAGS)
 
 compile_shaders: $(SPVDIRS) $(SPVFILES)
 
@@ -195,4 +200,4 @@ $(SPVFILES): $(subst $(DOMAIN)/spv,$(SHADERS),$(subst .spv,,$@))
 
 
 # INCLUSÕES FINAIS
--include $(subst .o,.d,$(OFILES))
+-include $(subst .h,.d,$(HFILES))
