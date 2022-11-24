@@ -1,79 +1,166 @@
-# INCLUSÕES RELEVANTES INICIAIS
+##################################################
+######//	MAGNUS MAKER	//####################
+##################################################
+# By Bernardo Maia Coelho 
+# Version: 2.0.0 (24/11/2022)
+
+
+
+
+
+
+
+
+
+
+##################################################
+######//	SETTINGS	//########################
+##################################################
+# Feel free to change those if you need.
+
+# Defines how the makefile will optimize and compile the code. Change to 
+STD_MODE := debug
+
+# Which compiler are we using?
+# EXE : The name of the output file. 
+CC := gcc
+EXE := main
+
+# SRC : Were should we look for code files?
+# INCLUSIONS : Were should we look for some extra headers?
+# CEXTENSIONS : So, what is the extension of the code files?
+SRC := src
+INCLUSIONS:= src include
+CEXTENSIONS := c cpp
+
+# Raise the flags!
+# C is for compiler flags and L is for linker flags.
+CFLAGS := -MMD -MP
+LDFLAGS := -MMD -MP
+
+
+# MAKEFILE SETTINGS
+MAKE := make
+MKDIR := mkdir -p
+RM := rm -fr
+CLS := clear
+
+
+# SHELL SETTINGS
+SHELL:=/bin/bash
+
+
+
+
+
+
+
+
+
+
+##################################################
+######//	INICIALIZATION		//################
+##################################################
+
+
+# SAVING STACK
+MK_STACK += $(lastword $(MAKEFILE_LIST))
+
+
+# INPORTANT INCLUSIONS
 ifneq ($(wildcard .env),)
 include .env
 endif
 
-
-# PARÂMETROS BOOLEANOS
-release =
-
-
-# CONSTANTES RELEVANTES
-CC := gcc
-EXE := main
-SRC := src
-SHADERS := shaders
-
-
-CFLAGS := -MD -MP -MMD
-LDFLAGS := 
-
-
-# DEFININDO FUNÇÕES DO SHELL
-MKDIR:=mkdir -p
-RM:=rm -rfv
-MAKE:=make
-CLEAR:=clear
-ECHO:=echo
-NEWLINE:=echo
-
-# Modo verbose
-ifeq ($(verbose),)
-	MUTE:=> /dev/null
-	ifeq ($(silent),)
-		SAY:=> /dev/tty
-	else
-		SAY:=> /dev/null
-	endif
+ifneq ($(wildcard target/data/.env),)
+include target/data/.env
 endif
 
 
 
-# DEFININDO A ESTRUTURA DE ARQUIVOS
-ifeq ($(release),)
-	DOMAIN:=target/debug
-	OPT:=-O0
-else
-	DOMAIN:=target/release
-	OPT:=-O3 -DRELEASE
-endif
-PROGRAM:=$(DOMAIN)/bin/$(EXE)
+# PARAMETERS
+# mode : {release, debug, none}
+mode =
+MODES_ENUM := release debug
 
-
-# FUNÇÕES IMPORTANTES
-uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
-
-
-# ARQUIVOS
-CFILES := $(wildcard $(SRC)/*.c) $(wildcard $(SRC)/*/*.c) $(wildcard $(SRC)/*/*/*.c) $(wildcard $(SRC)/*/*/*/*.c) $(wildcard $(SRC)/*/*/*/*/*.c) $(wildcard $(SRC)/*/*/*/*/*/*.c)
-OFILES := $(subst $(SRC),$(DOMAIN)/obj,$(subst .c,.o,$(CFILES)))
-
-HFILES := $(wildcard $(SRC)/*.h) $(wildcard $(SRC)/*/*.h) $(wildcard $(SRC)/*/*/*.h) $(wildcard $(SRC)/*/*/*/*.h) $(wildcard $(SRC)/*/*/*/*/*.h) $(wildcard $(SRC)/*/*/*/*/*/*.h)
-
-VERT_SHADERS := $(wildcard $(SHADERS)/*.vert) $(wildcard $(SHADERS)/*/*.vert) $(wildcard $(SHADERS)/*/*/*.vert) 
-FRAG_SHADERS := $(wildcard $(SHADERS)/*.frag) $(wildcard $(SHADERS)/*/*.frag) $(wildcard $(SHADERS)/*/*/*.frag) 
-SFILES := $(VERT_SHADERS) $(FRAG_SHADERS)
-SPVFILES := $(subst $(SHADERS),$(DOMAIN)/spv,$(foreach file,$(SFILES),$(file).spv))
-
-ifeq ($(structures),bin)
-	BINDIRS := $(call uniq,$(dir $(PROGRAM)))
-else ifeq ($(structures),obj)
-	OBJDIRS := $(call uniq,$(dir $(OFILES)))
-else ifeq ($(structures),spv)
-	SPVDIRS := $(call uniq,$(dir $(SPVFILES)))
+# Setting standard mode
+ifneq ($(mkstdmode),)
+	mode := $(mkstdmode)
 endif
 
-NEEDED_DIRS := $(BINDIRS) $(OBJDIRS) $(SPVDIRS)
+
+# GLOBAL VARIABLES
+# This variable will have an panic function if some erro has occurred. Else, it
+# Should be empty.
+validation =
+TARDIR = target/$(mode)
+
+
+# CONSTANTS
+# Yes, it is somewhat tricky to get a constant to have an empty space on makefiles.
+SPACE := $(subst ,, )
+
+
+# SHELL CHEAT SHEET
+# Just a quick shell action to crop the first and last line of text.
+POP := sed '$$d'
+SHIFT := sed '1d'
+CROP := $(POP) | $(SHIFT)
+IDENT := sed -e 's/^/|\ /'
+FORMAT := $(CROP) | $(POP) | $(IDENT)
+
+
+
+# PROCESSING PARAMETERS
+ifeq ($(mode),)
+	mode := debug
+else ifeq ($(filter $(mode),$(MODES_ENUM)),)
+	validation = @echo "Invalid mode." ; exit 1
+endif
+
+ifeq ($(mode),release)
+	CFLAGS += -O3 -Wall -Werror
+	LDFLAGS += -O3 -Wall -Werror
+else ifeq ($(mode),debug)
+	CFLAGS += -O0 -g3
+	LDFLAGS += -O0 -g3
+endif
+
+CFLAGS:=$(strip $(CFLAGS))
+
+
+# COOL FUNCTIONS
+getcod = $(subst .o,.c,$(subst $(TARDIR)/obj,$(SRC),$1))
+getobj = $(subst .c,.o,$(subst $(SRC),$(TARDIR)/obj,$1))
+# <UNUSED> : getdep = $(subst .c,.d,$(subst $(SRC),$(TARDIR)/dep,$1))
+
+
+
+# EXPLORING THE FILE SYSTEM
+# Iterate through the extensions : $(foreach extension,$(CEXTENSIONS), ... )
+# Use a shell and do stuff stealthly : $(shell ...)
+# Shell command to search recursively for code files : find ./$(SRC) | grep ".*\.$(extension)$$
+# | -> Obs: use find ./$(SRC) | grep ".*\.c$" to search for .c files on your terminal.
+CFILES := $(foreach extension,$(CEXTENSIONS),$(shell find ./$(SRC) | grep ".*\.$(extension)$$"))
+OFILES := $(foreach cfile,$(CFILES),$(call getobj,$(cfile)))
+DEPS := $(OFILES:.o=.d)
+
+HPATH := $(strip $(INCLUSIONS))
+HPATH += $(foreach folder,$(subst /.,,$(wildcard $(SRC)/*/.)),$(folder))
+HPATH:=$(strip $(foreach hpath,$(HPATH),-I $(hpath)))
+
+
+
+
+
+
+
+
+
+
+##################################################
+######//	TARGETS		//#######################
+##################################################
 
 
 # CONFIGURANDO TARGETS
@@ -83,118 +170,230 @@ NEEDED_DIRS := $(BINDIRS) $(OBJDIRS) $(SPVDIRS)
 .SILENT: all build structure run clean clear test release shaders
 
 
+# Just build all
+all:
+	@echo " "
+	@echo "# ALL : $(mode)"
+	@$(MAKE) build | $(FORMAT)
+	@echo "/"
+	@echo " "
 
-# TARGETS PRINCIPAIS
-## Compila tudo se necessário.
-all: 
-	@$(MAKE) build ident='>>$(ident)' $(MUTE)
-	@$(ECHO) ">>$(ident) Deu tudo certo :)" $(SAY)
-
-## Compila tudo se necessário, menos os shaders.
-build: 
-	@$(MAKE) structure structures=bin ident=">>$(ident)" $(MUTE)
-	@$(MAKE) structure structures=obj ident=">>$(ident)" $(MUTE)
-	@$(MAKE) $(PROGRAM) $(MUTE)
-	@$(ECHO) ">>$(ident) O programa foi compilado com sucesso!" $(SAY)
-
-## Cria diretórios se necessário.
-structure: $(NEEDED_DIRS)
-	@$(ECHO) ">>$(ident) A árvore de diretórios está nos conformes." $(SAY)
-
-## Compila se necessário e roda o programa.
+# Just run
 run:
-	@$(MAKE) all ident=">>$(ident)" $(MUTE)
-	$(NEWLINE) $(SAY)
-	@./$(PROGRAM) $(SAY)
+	@./$(TARDIR)/bin/$(EXE)
 
-## Deleta os binários.
-clean:
-	@$(RM) $(DOMAIN)/obj $(DOMAIN)/bin $(DOMAIN)/spv $(SAY)
-	@$(ECHO) ">>$(ident) Tudo limpo :)" $(SAY) 
+# Euild and execute
+exec:
+	@echo " "
+	@echo "# EXEC : $(mode)"
+	@$(MAKE) build | $(FORMAT)
+	@echo " " | $(IDENT)
+	@echo "# RUN : $(mode)" | $(IDENT)
+	@$(MAKE) run | $(CROP) | $(IDENT) | $(IDENT)
+	@echo "/" | $(IDENT)
+	@echo "/"
+	@echo " "
 
-## Deleta os binários e limpa a tela.
-clear:
-	@$(MAKE) clean ident=">>$(ident)" $(MUTE)
-	@$(CLEAR) $(SAY) 
+# Build the program.
+build:
+	@echo " "
+	@$(validation)
+	@echo "# BUILD : $(mode)" 
+	@$(MAKE) $(TARDIR)/bin/$(EXE) | $(CROP) | $(IDENT)
+	@echo "/"
+	@echo " "
 
-## Deleta o target inteiro.
-fullclean fullClean full_clean:
-	@$(RM) "target" $(SAY) 
-	@$(ECHO) ">>$(ident) Absolutamente tudo limpo :)" $(SAY)
-
-# Recompila tudo.
+# Clean and rebuild.
 fresh:
-	@$(MAKE) clean ident=">>$(ident)" $(MUTE)
-	@$(MAKE) all ident=">>$(ident)" $(MUTE)
-	@$(ECHO) ">>$(ident) A nova compilação foi um sucesso!" $(SAY) 
+	@echo " "
+	@echo "# FRESH: $(mode)"
+	@$(MAKE) clean | $(FORMAT)
+	@$(MAKE) build | $(FORMAT)
+	@echo "/"
+	@echo " "
 
-## Apenas roda o programa
-justrun justRun just_run:
-	@./$(PROGRAM) $(SAY)
-
-## Recompila e roda o programa.
+# test
 test:
-	@$(MAKE) clear ident=">>$(ident)" $(MUTE)
-	@$(MAKE) all ident=">>$(ident)" $(MUTE)
-	$(CLEAR)
-	@$(MAKE) justrun $(SAY)
+	-@$(CLS)
+	@echo " "
+	@echo "# TEST : $(mode)"
+	@$(MAKE) clean | $(FORMAT)
+	@$(MAKE) exec  | $(FORMAT)
+	@echo "/"
+	@echo " "
 
-## Compila uma versão otimizada do programa.
-release:
-	@$(MAKE) all release=true ident=">>$(ident)" $(MUTE)
-	@$(ECHO) ">>$(ident) Versão release compilada com sucesso!" $(SAY) 
+# A good way to test your changes
+quicktest qtest qt:
+	@$(MAKE) fresh
+	-@$(CLS)
+	@$(MAKE) run | $(CROP)
 
-## Compila os shaders
-shaders:
-	@$(MAKE) structure structures=spv ident=">>$(ident)" $(MUTE)
-	@$(MAKE) compile_shaders ident=">>$(ident)" $(MUTE)
-	@$(ECHO) ">>$(ident) Shaders compilados com sucesso!" $(SAY) 
-
-valgrind:
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=target/debug/analysis/valgrind-out.txt ./target/debug/bin/$(EXE)
-
-### Use essa keyword para gerar uma analysis do valgrind
-analysis:
-	$(MAKE) fresh
-	$(MKDIR) target/debug/analysis/
-	$(MAKE) valgrind
-	@$(ECHO) ">>$(ident) Analise feita!" $(SAY)
-
-quicktest:
-	$(MAKE) fresh $(MUTE)
-	$(CLEAR)
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./target/debug/bin/$(EXE) $(SAY)
-
-hello:
-	@$(ECHO) 'Hello World!'
-
-### Compacta tudo.
-bundle:
-	$(RM) target/bundle
-	7z a target/bundle/bundle.zip src Makefile -y
-
-### Linux only
+# Makes a .gitignore for you
 gitignore:
 	@$(ECHO) "/target" > .gitignore
 
-# CRIANDO DIRETÓRIOS, SE NECESSÁRIO
-$(NEEDED_DIRS):
-	@$(MKDIR) $@
+# Updates and instal necessery packages with apt
+update:
+	@echo " "
+	@echo "# UPDATE"
 
-# TARGETS DE COMPILAÇÃO
-## LINKANDO O POGRAMA PRINCIPAL
-$(PROGRAM): $(OFILES)
-	$(CC) $(CFLAGS) $(OPT) -o "$@" $(foreach file,$(OFILES),"$(file)") $(LDFLAGS)
+	@echo "Fetching for changes..." | $(IDENT)
+	@echo " " 
+	sudo apt update | $(IDENT)
+	@echo " " | $(IDENT)
 
-## COMPILANDO CADA CPP
-$(OFILES): $(subst $(DOMAIN)/obj,$(SRC),$(subst .o,.c,$@))
-	$(CC) $(CFLAGS) $(OPT) -c -o "$@" "$(subst $(DOMAIN)/obj,$(SRC),$(subst .o,.c,$@))" $(LDFLAGS)
+	@echo "Upgrading all packages..." | $(IDENT)
+	@echo " " 
+	sudo apt upgrade -y | $(IDENT)
+	@echo " " | $(IDENT)
 
-compile_shaders: $(SPVDIRS) $(SPVFILES)
+	@echo "Installing sed gnu build-essential (compilers and other stuff) ..." | $(IDENT)
+	@echo " " 
+	sudo apt install make build-essential -y | $(IDENT)
+	@echo " " | $(IDENT)
 
-$(SPVFILES): $(subst $(DOMAIN)/spv,$(SHADERS),$(subst .spv,,$@))
-	$(SC) $(SFLAGS) -o "$@" "$(subst $(DOMAIN)/spv,$(SHADERS),$(subst .spv,,$@))"
+	@echo "Installing linux cli utilities..." | $(IDENT)
+	@echo " " 
+	sudo apt-get install coreutils findutils grep -y | $(IDENT)
+	@echo " " | $(IDENT)
+
+	@echo "Installing zip..." | $(IDENT)
+	@echo " "
+	sudo apt-get install zip -y | $(IDENT)
+	@echo " " | $(IDENT)
+
+	@echo "Installing valgrind..." | $(IDENT)
+	@echo " " 
+	sudo apt install valgrind -y | $(IDENT)
+	@echo " " | $(IDENT)
+
+	@echo "Autoremoving unecessário packages..." | $(IDENT)
+	@echo " " 
+	sudo apt autoremove -y | $(IDENT)
+	@echo " " | $(IDENT)
+
+	@echo "ALL DONE!" | $(IDENT)
+	@echo "/"
+	@echo " "
 
 
-# INCLUSÕES FINAIS
--include $(subst .h,.d,$(HFILES))
+# Calls valgrind
+valgrind:
+	@echo " "
+	@echo "# VALGRIND EXECUTION : $(mode)"
+	@valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=$(TARDIR)/analysis/valgrind-out.txt ./$(TARDIR)/bin/$(EXE) | $(IDENT)
+	@echo "/"
+	@echo " "
+
+# Show valgrind output.
+valgrind-show:
+	@echo " "
+	@echo "# VALGRIND RESULTS : $(mode)"
+	@cat "./$(TARDIR)/analysis/valgrind-out.txt" | $(IDENT)
+	@echo "/"
+	@echo " "
+
+# Make fresh and analyse with valgrind.
+analysis:
+	@echo " "
+	@$(validation)
+	@echo "# ANALYSIS : $(mode)"
+	@$(MAKE) fresh | $(FORMAT)
+	@$(MKDIR) $(TARDIR)/analysis
+	@$(MAKE) valgrind | $(FORMAT)
+	@$(MAKE) valgrind-show | $(FORMAT)
+	@echo "/"
+	@echo " "
+
+# Just checks the files and display a summary.
+summary:
+	$(validation)
+	@echo " "
+	@echo "# SUMMARY"
+	@echo "# MODE: " 						| $(IDENT)
+	@echo "> $(mode) " 						| $(IDENT)
+	@echo " " 								| $(IDENT)
+	@echo "# CFILES: " 						| $(IDENT)
+	@echo "> $(CFILES) " 					| $(IDENT)
+	@echo " " 								| $(IDENT)
+	@echo "# DIRECTORIES TO BE INCLUDED: "	| $(IDENT)
+	@echo "> $(HPATH) " 					| $(IDENT)
+	@echo " " 								| $(IDENT)
+	@echo "# EXPECTED DEPENDENCY FILES: " 	| $(IDENT)
+	@echo "> $(DEPS) " 						| $(IDENT)
+	@echo " " 								| $(IDENT)
+	@echo "# EXPECTED OBJECT FILES: " 		| $(IDENT)
+	@echo "> $(OFILES) " 					| $(IDENT)
+	@echo " " 								| $(IDENT)
+	@echo "/"
+	@echo " "
+
+# Hello, World!
+hello hello-world:
+	@echo "Hello, World!"
+
+# Remove created files
+clean:
+	@echo " "
+	@echo "# CLEAN : $(mode)"
+	-@$(RM) -v $(TARDIR) target/data | $(IDENT)
+	@echo "/"
+	@echo " "
+
+# Clean and clear terminal
+clear:
+	-@$(CLS)
+	@echo " "
+	@echo "# CLEAR : $(mode)"
+	@$(MAKE) clean | $(FORMAT)
+	@echo "/"
+	@echo " "
+	@sleep 1
+	-@$(CLS)
+
+# This target make 
+bundle:
+	@echo " "
+	@echo "# BUNDLE "
+
+	@echo "> Altering std mode to: release" | $(IDENT)
+	$(shell if [ "$(wildcard target/data/.env)" = "" ] ; then \
+			$(MKDIR) target/data && \
+			touch target/data/.env ; \
+			else echo " " ; \
+			fi ; \
+	)
+	$(shell if [ "$(words $(shell cat target/data/.env | grep 'mkstdmode=release' | head -n 1))" = "0" ] ; then \
+			echo 'mkstdmode=release' ; \
+			else exit 0 ; \
+			fi >> target/data/.env \
+	)
+
+	@$(MAKE) zip | $(FORMAT)
+	@echo "/"
+	@echo " "
+
+# Makes the zip
+zip:
+	@echo " "
+	@echo "# ZIP : $(mode)"
+	@$(MKDIR) target/bundle | $(IDENT)
+	@zip -r target/bundle/$(shell pwd | sed 's#.*/##').zip $(patsubst target,,$(wildcard *)) $(wildcard target/data) | $(IDENT)
+	@echo "/"
+	@echo " "
+
+# COMPILING OBJECT FILES
+$(OFILES): $(filter %$(subst .o,.c,$(notdir $@)),$(CFILES))
+	@echo "(cc) Compiling: $(notdir $@) "
+	@$(MKDIR) $(dir $@) $(subst /obj/,/dep/,$(dir $@))
+	@$(CC) $(CFLAGS) $(HPATH) -c $(call getcod,$@) -o $@ -MF "$(subst .o ,.d,$(subst /obj/,/dep/,$@) )"
+
+# LINKING THE PROGRAM
+#.SECONDEXPANSION: $(TARDIR)/bin/$(EXE)
+$(TARDIR)/bin/$(EXE): $(OFILES)
+	@echo "(ld) Linking object files and creating the executable: $(notdir $@) "
+	@$(MKDIR) $(dir $@)
+	@$(CC) $(LDFLAGS) $(HPATH) $(OFILES) -o $@ | $(IDENT)
+
+# INCLUDING DEPENDENCY FILES
+-include $(DEPS)
