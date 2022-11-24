@@ -2,8 +2,8 @@
 ######//	MAGNUS MAKER	//####################
 ##################################################
 # By Bernardo Maia Coelho 
-# Version: 3.1.0 (24/11/2022)
-MAGNUS_MAKER_VERSION="3.1.0"
+# Version: 3.1.1 (24/11/2022)
+MAGNUS_MAKER_VERSION="3.1.1"
 
 
 
@@ -241,7 +241,7 @@ quicktest qtest qt:
 
 # Makes a .gitignore for you
 gitignore:
-	@$(ECHO) "/target" > .gitignore
+	@echo "/target" > .gitignore
 
 # Updates and instal necessery packages with apt
 update:
