@@ -131,10 +131,6 @@ CFLAGS:=$(strip $(CFLAGS))
 CFLAGS += -MD -MMD -MP
 LDFLAGS += -MD -MMD -MP
 
-ifeq ($(wildcard $(SRC)),)
-	SRC:=.
-endif
-
 # COOL FUNCTIONS
 getcod = $(subst .o,.c,$(subst $(TARDIR)/obj,$(SRC),$1))
 getobj = $(subst .c,.o,$(subst $(SRC),$(TARDIR)/obj,$1))
@@ -430,9 +426,9 @@ list-targets:
 	@echo "> all : builds on release mode." | $(IDENT)
 	@echo "> run : tries to run the release executable. If there is none, it tries the the debug executable." | $(IDENT)
 	@echo " " | $(IDENT)
-	@echo "> build : Build the program you can set the mode." | $(IDENT)
+	@echo "> build : Build the program on the current mode." | $(IDENT)
 	@echo "> justrun (jrun) : Just runs the program on the current mode. " | $(IDENT)
-	@echo "> exec (jrun) : Builds and execute. " | $(IDENT)
+	@echo "> exec : Builds and execute. " | $(IDENT)
 	@echo " " | $(IDENT)
 	@echo "> clean : Removes the outputs of a compilation on a given mode." | $(IDENT)
 	@echo "> clear : Just like clean, but clears the terminal after. " | $(IDENT)
