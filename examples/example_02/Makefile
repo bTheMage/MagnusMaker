@@ -3,7 +3,7 @@
 ##################################################
 # By Bernardo Maia Coelho 
 # Version: 3.2.0 (24/11/2022)
-MAGNUS_MAKER_VERSION="3.2.0"
+MAGNUS_MAKER_VERSION="3.2.1"
 
 
 
@@ -262,7 +262,10 @@ quicktest qtest qt:
 
 # Makes a .gitignore for you
 gitignore:
-	@$(ECHO) "/target" > .gitignore
+	@$(ECHO) "# Gitignore"
+	@$(ECHO) "Creating a .gitignore" | $(IDENT)
+	@$(ECHO) "target/" > .gitignore
+	@$(ECHO) "/"
 
 # Updates and instal necessery packages with apt
 update:
